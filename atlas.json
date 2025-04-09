@@ -1,0 +1,168 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "preferencias"
+            },
+            {
+              "name": "link"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -40,
+        0
+      ],
+      "id": "b7e42efe-bc43-4a29-9ac8-e36e615cfcfa",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1a58a248-19af-4b63-9ddf-82ccc49dcfaa",
+              "name": "output",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        0
+      ],
+      "id": "32900fdb-d1ac-478a-91d8-11a4b0b779d8",
+      "name": "response"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Filtre as informações que chegarem para você em categorias, as quais são:\n\nPreço:\nEndereço:\nQuantidade de Quartos:\nLink do imóvel:\n\nOutras características que você julgar importante para o conhecimento de uma IA SDR.\n\n### IMPORTANTE\n- Não envie \"()\" ou \"[\" quando mandar uma URL. Mande apenas o link.",
+              "role": "system"
+            },
+            {
+              "content": "=Tipo:{{ $json.hits[0].Tipo }} .\nEndereço: {{ $json.hits[0]['Endereço'] }}, {{ $json.hits[0]['Edf. / Cond.'] }}, {{ $json.hits[0].Bairro }}, {{ $json.hits[0].Cidade }}.\n\nUrl do imóvel: https://www.imobiliariajapi.com.br/imovel/{{ $json.hits[0]['Referência'] }}\n\nValor de venda: {{ $json.hits[0]['R$ Venda'] }}.\nValor de locação: {{ $json.hits[0]['R$ Locação'] }}.\n\nDormitórios: {{ $json.hits[0]['Dormitórios'] }},\nSuítes: {{ $json.hits[0]['Suítes'] }},\nVagas: {{ $json.hits[0].Vagas }},\nÁrea total: {{ $json.hits[0]['Área total'] }},\nÁrea construída: {{ $json.hits[0]['Área'] }},\n\nData de cadastro: {{ $json.hits[0]['Data de cadastro'] }}."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        520,
+        0
+      ],
+      "id": "93f83f68-7763-4bdb-a569-07444ce44c99",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "N0uSe42ux49uqSfq",
+          "name": "JAPI OPENAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://XWQRXY4QU9-dsn.algolia.net/1/indexes/imoveis-Imoveis/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Algolia-API-Key",
+              "value": "3c1bac55dc8925020e23c7089cbcf455"
+            },
+            {
+              "name": "X-Algolia-Application-Id",
+              "value": "XWQRXY4QU9"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"similarQuery\":\"{{ $json.preferencias }}\", \"hitsPerPage\":5}",
+        "options": {}
+      },
+      "id": "efab876d-e03f-4aaf-b4b7-53d1e736cefa",
+      "name": "[Algolia] Busca imóveis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "[Algolia] Busca imóveis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "response": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Algolia] Busca imóveis": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "preferencias": "casa, 2 quartos, 1 suíte, Parque Eloy Chaves",
+        "link": "a-venda"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68c45d34dfa1c83fbb526bfd109ed4fb7589ea110c1bc15af2b9f44ec84a9a08"
+  }
+}
